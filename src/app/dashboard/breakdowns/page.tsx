@@ -90,7 +90,7 @@ export default function BreakdownsPage() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload = { ...formData };
+      const payload: any = { ...formData };
       if (payload.vehicle_id === '') delete payload.vehicle_id;
       if (payload.user_id === '') delete payload.user_id;
 
@@ -233,7 +233,7 @@ export default function BreakdownsPage() {
                   <input 
                     type="file" 
                     accept="image/*" 
-                    capture="camera"
+                    capture="environment"
                     className="hidden" 
                     id="pickup-photo" 
                     onChange={(e) => handleFileUpload(e, 'start')} 
@@ -478,7 +478,7 @@ export default function BreakdownsPage() {
               
               <div className="space-y-6">
                 <div className="relative group">
-                  <input type="file" accept="image/*" capture="camera" className="hidden" id="end-photo" onChange={(e) => handleFileUpload(e, 'end')} />
+                  <input type="file" accept="image/*" capture="environment" className="hidden" id="end-photo" onChange={(e) => handleFileUpload(e, 'end')} />
                   <label htmlFor="end-photo" className="flex flex-col items-center justify-center gap-4 w-full aspect-video bg-obsidian border border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-gold/30 hover:bg-gold/5 transition-all overflow-hidden">
                     {endImage ? (
                       <img src={endImage} className="w-full h-full object-cover" alt="End" />
