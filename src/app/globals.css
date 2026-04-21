@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
+@theme {
+  --color-gold: #D4AF37;
+  --color-gold-light: #F9E2AF;
+  --color-midnight: #0A0A0A;
+  --color-obsidian: #121212;
+  --color-glass: rgba(255, 255, 255, 0.03);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #0A0A0A;
+  --foreground: #EDEDED;
+  --gold: #D4AF37;
+  --gold-glow: 0 0 20px rgba(212, 175, 55, 0.3);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: rgba(18, 18, 18, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+}
+
+.glass-gold {
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+/* Typography Gradient */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #F9E2AF 0%, #D4AF37 50%, #A67C00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Luxury Animations */
+@keyframes glow {
+  from { box-shadow: 0 0 5px rgba(212, 175, 55, 0.2); }
+  to { box-shadow: 0 0 20px rgba(212, 175, 55, 0.5); }
+}
+
+.animate-luxury-glow {
+  animation: glow 3s infinite alternate ease-in-out;
 }
