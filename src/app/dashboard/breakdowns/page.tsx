@@ -16,9 +16,12 @@ import {
   UserPlus,
   Camera,
   Eye,
+  FileText,
   Image as ImageIcon
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function BreakdownsPage() {
   const [showForm, setShowForm] = useState(false);
@@ -41,8 +44,11 @@ export default function BreakdownsPage() {
     from_location: '',
     to_location: '',
     description: '',
-    start_image: ''
+    start_image: '',
+    end_image: ''
   });
+
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'start' | 'end') => {
     const file = e.target.files?.[0];
@@ -108,7 +114,8 @@ export default function BreakdownsPage() {
         from_location: '',
         to_location: '',
         description: '',
-        start_image: ''
+        start_image: '',
+        end_image: ''
       });
       getBreakdowns();
     } catch (err: any) {
@@ -151,6 +158,60 @@ export default function BreakdownsPage() {
     } catch (err: any) {
       showToast(err.message || 'Failed to generate invoice', 'error');
     }
+  };
+
+  const handleDownloadInvoice = (item: any) => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFillColor(15, 15, 15);
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    doc.setTextColor(212, 175, 55);
+    doc.setFontSize(24);
+    doc.text('FALCON LOGISTICS', 20, 25);
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text('PREMIUM FLEET & BREAKDOWN MANAGEMENT', 20, 32);
+    
+    // Invoice Info
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(10);
+    doc.text(`Invoice ID: #${item._id.slice(-8).toUpperCase()}`, 140, 55);
+    doc.text(`Date: ${new Date(item.createdAt).toLocaleDateString()}`, 140, 62);
+    
+    // Details Table
+    const tableData = [
+      ['Service Item', 'Details'],
+      ['Client Name', item.client_name],
+      ['Vehicle Number', item.client_vehicle_number],
+      ['Pickup Point', item.from_location],
+      ['Drop-off Point', item.to_location],
+      ['Assigned Staff', item.user_id?.name || 'Assigned Agent'],
+      ['Fleet Asset', item.vehicle_id?.vehicle_number || 'N/A'],
+      ['Status', item.status.toUpperCase()],
+      ['Description', item.description || 'No additional notes provided.']
+    ];
+
+    autoTable(doc, {
+      startY: 75,
+      head: [tableData[0]],
+      body: tableData.slice(1),
+      theme: 'striped',
+      headStyles: { fillColor: [212, 175, 55], textColor: [0, 0, 0] },
+      styles: { fontSize: 9 }
+    });
+
+    // Footer
+    const finalY = (doc as any).lastAutoTable.finalY || 150;
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text('This is an electronically generated service record.', 20, finalY + 20);
+    doc.text('AKOD FALCON PLATFORM - SERVICE SETTLEMENT', 20, finalY + 25);
+
+    doc.save(`Falcon_Invoice_${item.client_name}_${item._id.slice(-6)}.pdf`);
+    showToast('Invoice PDF generated', 'success');
   };
 
   return (
@@ -228,7 +289,7 @@ export default function BreakdownsPage() {
               <LuxuryInput label="To Location" icon={ArrowRight} placeholder="Drop-off point" value={formData.to_location} onChange={(e) => setFormData({...formData, to_location: e.target.value})} />
               
               <div className="md:col-span-1">
-                <label className="text-[10px] uppercase tracking-[2px] text-gold/60 ml-1 mb-2 block">Pickup Condition Photo</label>
+                <label className="text-[10px] uppercase tracking-[2px] text-gold/60 ml-1 mb-2 block">Pickup Photo (Get Up)</label>
                 <div className="relative group">
                   <input 
                     type="file" 
@@ -247,12 +308,53 @@ export default function BreakdownsPage() {
                         <div className="w-10 h-10 rounded-lg overflow-hidden border border-gold/20">
                           <img src={formData.start_image} className="w-full h-full object-cover" alt="Pickup" />
                         </div>
-                        <span className="text-gold font-bold">PHOTO CAPTURED</span>
+                        <span className="text-gold font-bold uppercase text-[10px]">PICKUP READY</span>
                       </div>
                     ) : (
                       <>
                         <Camera size={18} />
                         TAKE PICKUP PHOTO
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              <div className="md:col-span-1">
+                <label className="text-[10px] uppercase tracking-[2px] text-gold/60 ml-1 mb-2 block">Drop-off Photo (Get Down)</label>
+                <div className="relative group">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment"
+                    className="hidden" 
+                    id="dropoff-photo-new" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setFormData({ ...formData, end_image: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }} 
+                  />
+                  <label 
+                    htmlFor="dropoff-photo-new" 
+                    className="flex items-center justify-center gap-3 w-full bg-obsidian border border-dashed border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-pointer hover:border-gold/30 hover:text-gold transition-all"
+                  >
+                    {formData.end_image ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-green-400/20">
+                          <img src={formData.end_image} className="w-full h-full object-cover" alt="Dropoff" />
+                        </div>
+                        <span className="text-green-400 font-bold uppercase text-[10px]">DROP-OFF READY</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Camera size={18} />
+                        TAKE DROP-OFF PHOTO
                       </>
                     )}
                   </label>
@@ -409,14 +511,14 @@ export default function BreakdownsPage() {
                         <span className="text-[9px] uppercase font-bold text-white/20 tracking-tighter">Photos</span>
                         <div className="flex items-center gap-2 mt-1">
                           {item.start_image ? (
-                             <div className="w-8 h-8 rounded-lg overflow-hidden border border-gold/20 group/img relative cursor-zoom-in">
+                             <div className="w-8 h-8 rounded-lg overflow-hidden border border-gold/20 group/img relative cursor-zoom-in" onClick={() => setViewingImage(item.start_image)}>
                                <img src={item.start_image} className="w-full h-full object-cover" alt="S" />
                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity"><Eye size={10} className="text-white" /></div>
                              </div>
                           ) : <div className="w-8 h-8 rounded-lg bg-white/5 border border-dashed border-white/10 flex items-center justify-center"><ImageIcon size={12} className="text-white/10" /></div>}
                           
                           {item.end_image ? (
-                             <div className="w-8 h-8 rounded-lg overflow-hidden border border-green-400/20 group/img relative cursor-zoom-in">
+                             <div className="w-8 h-8 rounded-lg overflow-hidden border border-green-400/20 group/img relative cursor-zoom-in" onClick={() => setViewingImage(item.end_image)}>
                                <img src={item.end_image} className="w-full h-full object-cover" alt="E" />
                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity"><Eye size={10} className="text-white" /></div>
                              </div>
@@ -448,6 +550,15 @@ export default function BreakdownsPage() {
                           className="px-4 py-2 bg-gold/10 hover:bg-gold text-gold hover:text-black rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all"
                         >
                           Complete Service
+                        </button>
+                      )}
+                      {item.status === 'Completed' && (
+                        <button 
+                          onClick={() => handleDownloadInvoice(item)}
+                          className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2"
+                        >
+                          <FileText size={14} className="text-gold" />
+                          PDF Report
                         </button>
                       )}
                       <button className="p-4 rounded-2xl bg-white/5 hover:bg-gold/10 hover:text-gold transition-all text-white/40">
@@ -502,6 +613,29 @@ export default function BreakdownsPage() {
                   FINALIZE & SAVE
                 </LuxuryButton>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Image Lightbox */}
+      <AnimatePresence>
+        {viewingImage && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-10 pointer-events-none">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setViewingImage(null)} className="absolute inset-0 bg-black/95 backdrop-blur-xl pointer-events-auto" />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-5xl w-full h-full flex items-center justify-center"
+            >
+              <img src={viewingImage} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" alt="Evidence" />
+              <button 
+                onClick={() => setViewingImage(null)}
+                className="absolute top-4 right-4 p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all pointer-events-auto"
+              >
+                <Plus className="rotate-45" size={24} />
+              </button>
             </motion.div>
           </div>
         )}

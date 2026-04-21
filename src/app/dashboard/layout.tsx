@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { LayoutDashboard, Users, AlertCircle, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, AlertCircle, Clock, Car, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -12,13 +12,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, roles: ['Admin', 'User'] },
     { href: '/dashboard/attendance', icon: Clock, roles: ['Admin', 'User'] },
     { href: '/dashboard/breakdowns', icon: AlertCircle, roles: ['Admin', 'User'] },
     { href: '/dashboard/workers', icon: Users, roles: ['Admin'] },
+    { href: '/dashboard/vehicles', icon: Car, roles: ['Admin'] },
   ];
 
   const filteredItems = navItems.filter(item => item.roles.includes(user?.role || 'User'));
@@ -41,10 +42,18 @@ export default function DashboardLayout({
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 lg:hidden glass-gold glass p-4 flex justify-around items-center z-50 rounded-t-[2.5rem] border-t border-gold/20">
-        {filteredItems.map(item => (
-          <NavItem key={item.href} href={item.href} icon={item.icon} active={pathname === item.href} />
-        ))}
+      <nav className="fixed bottom-0 left-0 right-0 lg:hidden glass-gold glass p-4 flex justify-between items-center z-50 rounded-t-[2.5rem] border-t border-gold/20 overflow-x-auto gap-2">
+        <div className="flex justify-around items-center flex-1 min-w-max gap-4">
+          {filteredItems.map(item => (
+            <NavItem key={item.href} href={item.href} icon={item.icon} active={pathname === item.href} />
+          ))}
+          <button 
+            onClick={logout}
+            className="p-3 rounded-2xl text-white/40 active:bg-red-400 active:text-black transition-all"
+          >
+            <LogOut size={24} />
+          </button>
+        </div>
       </nav>
     </div>
   );
